@@ -38,7 +38,6 @@
         memory[0x000D] = 0x02;
 
         // execute a NOP
-
         memory[0x000E] = 0xEA;
 
         // stop program
@@ -73,7 +72,7 @@ public class Emulator6502
         memory = program;
         pc = (ushort)(memory[0xFFFD] << 8 | memory[0xFFFC]);
         sp = 0xFF;
-        status = 0b00110110;
+        status = 0b00110000;
     }
 
     public void executeNextInstruction()
@@ -82,12 +81,12 @@ public class Emulator6502
         switch (instuction)
         {
             case 0x02: // HLT
-                isRunning = false;
-
                 if(debug)
                 {
                     printInstructionInfo();
                 }
+
+                isRunning = false;
                 break;
             case 0x18: // CLC
                 if (debug)
@@ -118,20 +117,15 @@ public class Emulator6502
                 pc++;
                 byte value = memory[pc];
                 pc++;
-                ushort result = (ushort)(a + value);
-                if(carryFlag())
-                {
-                    result++;
-                }
+                ushort result = (ushort)(a + value + (carryFlag() ? 1 : 0));
 
-                if (result > 0xFF)
-                {
-                    setCarryFlag(true);
-                }
-                else
-                {
-                    setCarryFlag(false);
-                }
+                setCarryFlag(result > 0xFF);
+
+                setOverflowFlag(((a ^ value) & 0x80) == 0 && ((a ^ result) & 0x80) != 0);
+
+                setNegativeFlag((result & 0x80) != 0);
+
+                setZeroFlag((byte)result == 0);
 
                 a = (byte)result;
 
@@ -168,20 +162,15 @@ public class Emulator6502
                 pc++;
                 value = memory[pc];
                 pc++;
-                result = (ushort)(a - value);
-                if (!carryFlag())
-                {
-                    result--;
-                }
+                result = (ushort)(a - value - (carryFlag() ? 0 : 1));
 
-                if (result > 0xFF)
-                {
-                    setCarryFlag(true);
-                }
-                else
-                {
-                    setCarryFlag(false);
-                }
+                setCarryFlag(result >= 0x0);
+
+                setOverflowFlag(((a ^ value) & 0x80) != 0 && ((a ^ result) & 0x80) != 0);
+
+                setNegativeFlag((result & 0x80) != 0);
+
+                setZeroFlag((byte)result == 0);
 
                 a = (byte)result;
 
@@ -223,6 +212,56 @@ public class Emulator6502
         }
     }
 
+    public bool zeroFlag()
+    {
+        return (status & 0b00000010) > 0;
+    }
+
+    public void setZeroFlag(bool value)
+    {
+        if (value)
+        {
+            status |= 0b00000010;
+        }
+        else
+        {
+            status &= 0b11111101;
+        }
+    }
+    public bool overflowFlag()
+    {
+        return (status & 0b01000000) > 0;
+    }
+
+    public void setOverflowFlag(bool value)
+    {
+        if (value)
+        {
+            status |= 0b01000000;
+        }
+        else
+        {
+            status &= 0b10111111;
+        }
+    }
+
+    public bool negativeFlag()
+    {
+        return (status & 0b10000000) > 0;
+    }
+
+    public void setNegativeFlag(bool value)
+    {
+        if (value)
+        {
+            status |= 0b10000000;
+        }
+        else
+        {
+            status &= 0b01111111;
+        }
+    }
+
     public void printInstructionInfo()
     {
         System.Console.WriteLine("------------------------------");
@@ -236,7 +275,7 @@ public class Emulator6502
         System.Console.WriteLine("A: {0:X2}", a);
         System.Console.WriteLine("X: {0:X2}", x);
         System.Console.WriteLine("Y: {0:X2}", y);
-        System.Console.WriteLine("Status: {0:X2}", status);
+        System.Console.WriteLine("Status: {0}", Convert.ToString(status, 2).PadLeft(8, '0'));
         System.Console.WriteLine("0x0200: {0:X2}", memory[0x0200]);
         System.Console.WriteLine("0x0201: {0:X2}", memory[0x0201]);
     }
