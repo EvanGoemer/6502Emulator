@@ -108,6 +108,29 @@ public class Emulator6502
                 pc++;
 
                 break;
+            case 0x65: // ADC $address [Zero Page]
+                if (debug)
+                {
+                    printInstructionInfo();
+                }
+
+                pc++;
+                byte addressZeroPageADC = memory[pc];
+                byte valueZeroPageADC = memory[addressZeroPageADC];
+                pc++;
+                ushort resultZeroPageADC = (ushort)(a + valueZeroPageADC + (carryFlag() ? 1 : 0));
+
+                setCarryFlag(resultZeroPageADC > 0xFF);
+
+                setOverflowFlag(((a ^ valueZeroPageADC) & 0x80) == 0 && ((a ^ resultZeroPageADC) & 0x80) != 0);
+
+                setNegativeFlag((resultZeroPageADC & 0x80) != 0);
+
+                setZeroFlag((byte)resultZeroPageADC == 0);
+
+                a = (byte)resultZeroPageADC;
+
+                break;
             case 0x69: // ADC #immediate
                 if (debug)
                 {
@@ -115,19 +138,31 @@ public class Emulator6502
                 }
 
                 pc++;
-                byte value = memory[pc];
+                byte valueADC = memory[pc];
                 pc++;
-                ushort result = (ushort)(a + value + (carryFlag() ? 1 : 0));
+                ushort resultADC = (ushort)(a + valueADC + (carryFlag() ? 1 : 0));
 
-                setCarryFlag(result > 0xFF);
+                setCarryFlag(resultADC > 0xFF);
 
-                setOverflowFlag(((a ^ value) & 0x80) == 0 && ((a ^ result) & 0x80) != 0);
+                setOverflowFlag(((a ^ valueADC) & 0x80) == 0 && ((a ^ resultADC) & 0x80) != 0);
 
-                setNegativeFlag((result & 0x80) != 0);
+                setNegativeFlag((resultADC & 0x80) != 0);
 
-                setZeroFlag((byte)result == 0);
+                setZeroFlag((byte)resultADC == 0);
 
-                a = (byte)result;
+                a = (byte)resultADC;
+
+                break;
+            case 0x85: // STA $address [Zero Page]
+                if (debug)
+                {
+                    printInstructionInfo();
+                }
+
+                pc++;
+                byte addressZeroPage = memory[pc];
+                memory[addressZeroPage] = a;
+                pc++;
 
                 break;
             case 0x8D: // STA $address
@@ -142,6 +177,18 @@ public class Emulator6502
                 pc += 2;
 
                 break;
+            case 0xA5: // LDA $address [Zero Page]
+                if (debug)
+                {
+                    printInstructionInfo();
+                }
+
+                pc++;
+                byte addressZeroPageLDA = memory[pc];
+                a = memory[addressZeroPageLDA];
+                pc++;
+
+                break;
             case 0xA9: // LDA #immediate
                 if (debug)
                 {
@@ -153,6 +200,29 @@ public class Emulator6502
                 pc++;
 
                 break;
+            case 0xE5: // SBC $address [Zero Page]
+                if (debug)
+                {
+                    printInstructionInfo();
+                }
+
+                pc++;
+                byte addressZeroPageSBC = memory[pc];
+                byte valueZeroPageSBC = memory[addressZeroPageSBC];
+                pc++;
+                ushort resultZeroPageSBC = (ushort)(a - valueZeroPageSBC - (carryFlag() ? 0 : 1));
+
+                setCarryFlag(resultZeroPageSBC <= 0xFF);
+
+                setOverflowFlag(((a ^ valueZeroPageSBC) & 0x80) != 0 && ((a ^ resultZeroPageSBC) & 0x80) != 0);
+
+                setNegativeFlag((resultZeroPageSBC & 0x80) != 0);
+
+                setZeroFlag((byte)resultZeroPageSBC == 0);
+
+                a = (byte)resultZeroPageSBC;
+
+                break;
             case 0xE9: // SBC #immediate
                 if (debug)
                 {
@@ -160,19 +230,19 @@ public class Emulator6502
                 }
 
                 pc++;
-                value = memory[pc];
+                byte valueSBC = memory[pc];
                 pc++;
-                result = (ushort)(a - value - (carryFlag() ? 0 : 1));
+                ushort resultSBC = (ushort)(a - valueSBC - (carryFlag() ? 0 : 1));
 
-                setCarryFlag(result <= 0xFF);
+                setCarryFlag(resultSBC <= 0xFF);
 
-                setOverflowFlag(((a ^ value) & 0x80) != 0 && ((a ^ result) & 0x80) != 0);
+                setOverflowFlag(((a ^ valueSBC) & 0x80) != 0 && ((a ^ resultSBC) & 0x80) != 0);
 
-                setNegativeFlag((result & 0x80) != 0);
+                setNegativeFlag((resultSBC & 0x80) != 0);
 
-                setZeroFlag((byte)result == 0);
+                setZeroFlag((byte)resultSBC == 0);
 
-                a = (byte)result;
+                a = (byte)resultSBC;
 
                 break;
             case 0xEA: // NOP
@@ -182,15 +252,14 @@ public class Emulator6502
                 }
 
                 pc++;
-
                 break;
             default:
-                pc++;
                 if (debug)
                 {
-                    System.Console.WriteLine("Unknown instruction: {0:X2}", instuction);
                     printInstructionInfo();
+                    System.Console.WriteLine("Unknown instruction: {0:X2}", instuction);
                 }
+                isRunning = false;
                 break;
         }
     }
