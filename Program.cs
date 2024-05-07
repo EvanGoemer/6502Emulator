@@ -164,7 +164,7 @@ public class Emulator6502
                 pc++;
                 result = (ushort)(a - value - (carryFlag() ? 0 : 1));
 
-                setCarryFlag(result >= 0x0);
+                setCarryFlag(result <= 0xFF);
 
                 setOverflowFlag(((a ^ value) & 0x80) != 0 && ((a ^ result) & 0x80) != 0);
 
