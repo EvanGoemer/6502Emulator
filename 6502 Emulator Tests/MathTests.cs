@@ -177,10 +177,10 @@ namespace _6502_Emulator_Tests
             */
 
             // add 80 + 80 and put the result in memory at 0x200
-            memory[0x0000] = 0xA9; // LDA #255
+            memory[0x0000] = 0xA9; // LDA #80
             memory[0x0001] = 0x50;
             memory[0x0002] = 0x18; // CLC
-            memory[0x0003] = 0x69; // ADC #2
+            memory[0x0003] = 0x69; // ADC #80
             memory[0x0004] = 0x50;
             memory[0x0005] = 0x8D; // STA $0200
             memory[0x0006] = 0x00;
