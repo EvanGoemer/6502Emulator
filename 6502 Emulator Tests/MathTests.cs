@@ -320,26 +320,26 @@ namespace _6502_Emulator_Tests
         }
 
         [TestMethod]
-        public void SubtractionUnderflowNegativeTest()
+        public void SubtractionOverflowNegativeTest()
         {
             byte[] memory = new byte[64 * 1024];
             memory[0xFFFC] = 0x00;
             memory[0xFFFD] = 0x00;
 
             /*
-                LDA #0
+                LDA #80
                 SEC
-                SBC #1
+                SBC #176
                 STA $0200
                 HLT
             */
 
-            // subtract 0 - 1 and put the result in memory at 0x200
-            memory[0x0000] = 0xA9; // LDA #0
-            memory[0x0001] = 0x00;
+            // subtract 80 - 176 and put the result in memory at 0x200
+            memory[0x0000] = 0xA9; // LDA #80
+            memory[0x0001] = 0x50;
             memory[0x0002] = 0x38; // SEC
-            memory[0x0003] = 0xE9; // SBC #1
-            memory[0x0004] = 0x01;
+            memory[0x0003] = 0xE9; // SBC #176
+            memory[0x0004] = 0xB0;
             memory[0x0005] = 0x8D; // STA $0200
             memory[0x0006] = 0x00;
             memory[0x0007] = 0x02;
@@ -356,8 +356,8 @@ namespace _6502_Emulator_Tests
                 }
             }
 
-            Assert.AreEqual(255, emulator.memory[0x0200]);
-            Assert.AreEqual(0b10110000, emulator.status);
+            Assert.AreEqual(160, emulator.memory[0x0200]);
+            Assert.AreEqual(0b11110000, emulator.status);
         }
 
         [TestMethod]
