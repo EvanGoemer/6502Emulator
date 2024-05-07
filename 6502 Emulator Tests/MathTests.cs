@@ -121,7 +121,7 @@ namespace _6502_Emulator_Tests
         }
 
         [TestMethod]
-        public void AdditonOverflowZeroTest()
+        public void AdditonCarryZeroTest()
         {
             byte[] memory = new byte[64 * 1024];
             memory[0xFFFC] = 0x00;
@@ -159,6 +159,47 @@ namespace _6502_Emulator_Tests
 
             Assert.AreEqual(0, emulator.memory[0x0200]);
             Assert.AreEqual(0b00110011, emulator.status);
+        }
+
+        [TestMethod]
+        public void AdditonOverflowTest()
+        {
+            byte[] memory = new byte[64 * 1024];
+            memory[0xFFFC] = 0x00;
+            memory[0xFFFD] = 0x00;
+
+            /*
+                LDA #80
+                CLC
+                ADC #80
+                STA $0200
+                HLT
+            */
+
+            // add 80 + 80 and put the result in memory at 0x200
+            memory[0x0000] = 0xA9; // LDA #255
+            memory[0x0001] = 0x50;
+            memory[0x0002] = 0x18; // CLC
+            memory[0x0003] = 0x69; // ADC #2
+            memory[0x0004] = 0x50;
+            memory[0x0005] = 0x8D; // STA $0200
+            memory[0x0006] = 0x00;
+            memory[0x0007] = 0x02;
+            memory[0x0008] = 0x02; // HLT
+
+            Emulator6502 emulator = new Emulator6502(memory);
+            while (emulator.isRunning)
+            {
+                emulator.executeNextInstruction();
+
+                if (emulator.debug)
+                {
+                    emulator.printDebugInfo();
+                }
+            }
+
+            Assert.AreEqual(160, emulator.memory[0x0200]);
+            Assert.AreEqual(0b11110000, emulator.status);
         }
 
         [TestMethod]
