@@ -2,57 +2,7 @@
 {
     public static void Main()
     {
-        byte[] memory = new byte[64 * 1024];
-        memory[0xFFFC] = 0x00;
-        memory[0xFFFD] = 0x00;
-
-        /*
-            LDA #2
-            CLC
-            ADC #2
-            STA $0200
-
-            SEC
-            SBC #3
-            STA $0201
-
-            HLT
-        */
-
-        // add 2+2 and put the result in memory at 0x200
-        memory[0x0000] = 0xA9; // LDA #2
-        memory[0x0001] = 0x02;
-        memory[0x0002] = 0x18; // CLC
-        memory[0x0003] = 0x69; // ADC #2
-        memory[0x0004] = 0x02;
-        memory[0x0005] = 0x8D; // STA $0200
-        memory[0x0006] = 0x00;
-        memory[0x0007] = 0x02;
-
-        // subtract 3 from result of previous operation and put the result in memory at 0x201
-        memory[0x0008] = 0x38; // SEC
-        memory[0x0009] = 0xE9; // SBC #3
-        memory[0x000A] = 0x03;
-        memory[0x000B] = 0x8D; // STA $0201
-        memory[0x000C] = 0x01;
-        memory[0x000D] = 0x02;
-
-        // execute a NOP
-        memory[0x000E] = 0xEA;
-
-        // stop program
-        memory[0x000F] = 0x02; // HLT
-
-        Emulator6502 emulator = new Emulator6502(memory);
-        while (emulator.isRunning)
-        {
-            emulator.executeNextInstruction();
-
-            if(emulator.debug)
-            { 
-                emulator.printDebugInfo(); 
-            }
-        }
+        Console.WriteLine("This is a library for now. Use unit tests to run code with the emulator.");
     }
 }
 
@@ -106,6 +56,17 @@ public class Emulator6502
 
                 setCarryFlag(true);
                 pc++;
+
+                break;
+            case 0x4C: // JMP $address
+                if (debug)
+                {
+                    printInstructionInfo();
+                }
+
+                pc++;
+                ushort addressJMP = (ushort)(memory[pc + 1] << 8 | memory[pc]);
+                pc = addressJMP;
 
                 break;
             case 0x65: // ADC $address [Zero Page]
@@ -177,6 +138,20 @@ public class Emulator6502
                 pc += 2;
 
                 break;
+            case 0xA2: // LDX #immediate
+                if (debug)
+                {
+                    printInstructionInfo();
+                }
+
+                pc++;
+                x = memory[pc];
+                pc++;
+
+                setZeroFlag(x == 0);
+                setNegativeFlag((x & 0x80) != 0);
+
+                break;
             case 0xA5: // LDA $address [Zero Page]
                 if (debug)
                 {
@@ -188,6 +163,9 @@ public class Emulator6502
                 a = memory[addressZeroPageLDA];
                 pc++;
 
+                setZeroFlag(a == 0);
+                setNegativeFlag((a & 0x80) != 0);
+
                 break;
             case 0xA9: // LDA #immediate
                 if (debug)
@@ -198,6 +176,37 @@ public class Emulator6502
                 pc++;
                 a = memory[pc];
                 pc++;
+
+                setZeroFlag(a == 0);
+                setNegativeFlag((a & 0x80) != 0);
+
+                break;
+            case 0xCA: // DEX
+                if (debug)
+                {
+                    printInstructionInfo();
+                }
+
+                x--;
+                pc++;
+
+                setZeroFlag(x == 0);
+                setNegativeFlag((x & 0x80) != 0);
+
+                break;
+            case 0xD0: // BNE #REL
+                if (debug)
+                {
+                    printInstructionInfo();
+                }
+
+                pc++;
+                sbyte offsetBNE = (sbyte)memory[pc];
+                pc++;
+                if (!zeroFlag())
+                {
+                    pc += (ushort)offsetBNE;
+                }
 
                 break;
             case 0xE5: // SBC $address [Zero Page]
@@ -252,6 +261,20 @@ public class Emulator6502
                 }
 
                 pc++;
+                break;
+            case 0XF0: // BEQ #REL
+                if (debug)
+                {
+                    printInstructionInfo();
+                }
+
+                pc++;
+                sbyte offsetBEQ = (sbyte)memory[pc];
+                pc++;
+                if (zeroFlag())
+                {
+                    pc += (ushort)offsetBEQ;
+                }
                 break;
             default:
                 if (debug)
