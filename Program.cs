@@ -48,6 +48,22 @@ public class Emulator6502
                 pc++;
 
                 break;
+            case 0x20: // JSR $address
+                if (debug)
+                {
+                    printInstructionInfo();
+                }
+
+                pc++;
+                ushort addressJSR = (ushort)(memory[pc + 1] << 8 | memory[pc]);
+                pc++;
+                memory[0x0100 + sp] = (byte)(pc >> 8);
+                sp--;
+                memory[0x0100 + sp] = (byte)(pc & 0xFF);
+                sp--;
+                pc = addressJSR;
+
+                break;
             case 0x38: // SEC
                 if (debug)
                 {
@@ -67,6 +83,18 @@ public class Emulator6502
                 pc++;
                 ushort addressJMP = (ushort)(memory[pc + 1] << 8 | memory[pc]);
                 pc = addressJMP;
+
+                break;
+            case 0x60: // RTS
+                if (debug)
+                {
+                    printInstructionInfo();
+                }
+
+                sp++;
+                pc = (ushort)(memory[0x0100 + sp + 1] << 8 | memory[0x0100 + sp]);
+                pc++;
+                sp++;
 
                 break;
             case 0x65: // ADC $address [Zero Page]
@@ -136,6 +164,16 @@ public class Emulator6502
                 ushort address = (ushort)(memory[pc + 1] << 8 | memory[pc]);
                 memory[address] = a;
                 pc += 2;
+
+                break;
+            case 0x9A: // TXS
+                if (debug)
+                {
+                    printInstructionInfo();
+                }
+
+                sp = x;
+                pc++;
 
                 break;
             case 0xA2: // LDX #immediate
